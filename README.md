@@ -64,7 +64,7 @@ Ao contrário de uma **máquina virtual**, que virtualiza um sistema operacional
 
 ## ⚙️ 2. Pré-requisitos
 
-Você pode realizar este laboratório de três formas, com uma opção online oficial e duas alternativas:
+Você pode realizar este laboratório de duas formas: a opção online oficial (Codespaces) ou uma instalação local do Docker:
 
 ### ☁️ Opção 1 – GitHub Codespaces (online, recomendada)
 
@@ -87,7 +87,7 @@ Você pode realizar este laboratório de três formas, com uma opção online of
 - Se o Docker não estiver disponível logo após abrir o ambiente, execute **Codespaces: Rebuild Container**.
 - Contas pessoais possuem franquia mensal; após o limite, o uso pode exigir forma de pagamento ou orçamento da organização.
 
-### 💻 Opção 2 – Docker Desktop (Windows/Mac/Linux)
+### 💻 Opção 2 – Docker local (Docker Desktop ou Docker Engine)
 1. **Windows/Mac:** Baixe o **Docker Desktop**:  
    [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
    
@@ -106,8 +106,16 @@ Você pode realizar este laboratório de três formas, com uma opção online of
    docker info
    ```
 
+---
 
 ## 🎯 3. Conceitos Essenciais: Identificação e Modos de Execução
+
+> **⚠️ Atenção:** os comandos desta seção são **ilustrativos** — a prática começa na **Seção 4**. Se você executá-los para testar, remova os containers criados antes de iniciar o laboratório, senão o Passo 2 falhará com `Conflict. The container name "/webserver" is already in use` ou `port is already allocated`:
+>
+> ```bash
+> docker rm -f meu-nginx webserver ubuntu-server
+> docker container prune -f
+> ```
 
 ### 🔑 Identificação de Containers
 
@@ -213,8 +221,8 @@ O modo *detached* executa o container em **segundo plano**, liberando o terminal
 # Executar NGINX em background
 docker run -d --name webserver -p 8080:80 nginx
 
-# O terminal retorna imediatamente com o Container ID
-a3f5b8c7e9d1f2a4b6c8d0e2f4a6b8c0
+# O terminal retorna imediatamente com o Container ID (64 caracteres)
+a3f5b8c7e9d1f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d6e8f0a2
 
 # Container continua rodando em background
 docker ps
@@ -325,6 +333,8 @@ docker run -d --name webserver -p 8080:80 nginx:1.27
 
 **Você deve ver:** A página padrão "Welcome to nginx!"
 
+> 📸 **Tire agora o `screenshot-passo2.png`** (o container `webserver` será modificado no Passo 4 e removido no Passo 6).
+
 ---
 
 ### 🔹 Passo 3 – Listar containers (entendendo os estados)
@@ -375,13 +385,17 @@ docker exec -it webserver bash
 cat /usr/share/nginx/html/index.html
 
 # Modificar a página principal
-echo '<h1>🐳 Sei tudo sobre DOCKER!</h1><p>Modificado em tempo real!</p>' > /usr/share/nginx/html/index.html
+# (a tag <meta charset> evita que o emoji apareça como "ðŸ³" no navegador,
+#  pois o NGINX padrão não informa o charset no cabeçalho HTTP)
+echo '<meta charset="utf-8"><h1>🐳 Sei tudo sobre DOCKER!</h1><p>Modificado em tempo real!</p>' > /usr/share/nginx/html/index.html
 
 # Sair do container (ele continua rodando)
 exit
 ```
 
 **Recarregue o navegador** → Você verá a página modificada!
+
+> 📸 **Tire agora o `screenshot-passo4.png`** com a página modificada.
 
 
 ---
@@ -436,18 +450,22 @@ docker kill webserver
 # Remover o container (já para automaticamente se estiver rodando)
 docker rm -f webserver
 
-# Remover TODOS os containers parados
+# Remover TODOS os containers parados (ex.: o do hello-world)
+# O comando pede confirmação: responda "y". Se responder "N", o
+# `docker rmi hello-world` da limpeza final falhará (imagem em uso).
 docker container prune
 
 # Listar imagens baixadas (apenas para inspecionar)
 docker images
 ```
 
+---
+
 ## 🌐 5. Atividade Final – Servidor Web Personalizado
 
 ### 1. Clonar o repositório de exemplo
 
-Para termos arquivos reais de um site rodando facilmente em nossa aplicação:
+O repositório [`fatec-cd/pratica-docker`](https://github.com/fatec-cd/pratica-docker) contém um site estático (`index.html` + `site.css`) preparado para esta atividade. O objetivo é servi-lo com o NGINX **a partir de um container** e acessá-lo por uma **URL pública**.
 
 ```bash
 # Clonar repositório com conteúdo web
@@ -455,16 +473,10 @@ git clone https://github.com/fatec-cd/pratica-docker.git
 cd pratica-docker
 ```
 
-> **⚠️ Se o repositório acima não estiver acessível** (404/privado) **ou não contiver `index.html` na raiz**, crie rapidamente um conteúdo local e prossiga a partir dele:
->
-> ```bash
-> mkdir pratica-docker && cd pratica-docker
-> echo '<h1>🐳 Meu site no NGINX</h1><p>Servido via bind mount.</p>' > index.html
-> ```
-
 **📝 Nota para Windows:**
 - Se não tiver Git instalado, baixe em: [https://git-scm.com/download/win](https://git-scm.com/download/win)
-- Ou baixe o ZIP do repositório diretamente no GitHub e extraia
+- Ou baixe o ZIP do repositório diretamente no GitHub (**Code → Download ZIP**), extraia e entre na pasta extraída (ela se chamará `pratica-docker-main`)
+- Confira que você está na pasta certa: `ls` (ou `dir`) deve listar `index.html`, `site.css` e `README.md`
 
 ### 2. Executar NGINX com bind mount
 
@@ -472,18 +484,18 @@ cd pratica-docker
 ```bash
 docker run -d --name meuweb \
   -p 8081:80 \
-  -v $(pwd):/usr/share/nginx/html:ro \
+  -v "$(pwd)":/usr/share/nginx/html:ro \
   nginx:1.27
 ```
 
 **Windows (PowerShell):**
 ```powershell
-docker run -d --name meuweb -p 8081:80 -v ${PWD}:/usr/share/nginx/html:ro nginx:1.27
+docker run -d --name meuweb -p 8081:80 -v "${PWD}:/usr/share/nginx/html:ro" nginx:1.27
 ```
 
 **Windows (CMD):**
 ```bat
-docker run -d --name meuweb -p 8081:80 -v %cd%:/usr/share/nginx/html:ro nginx:1.27
+docker run -d --name meuweb -p 8081:80 -v "%cd%":/usr/share/nginx/html:ro nginx:1.27
 ```
 
 ### 3. Entendendo o comando
@@ -493,17 +505,34 @@ docker run -d --name meuweb -p 8081:80 -v %cd%:/usr/share/nginx/html:ro nginx:1.
 - `--name meuweb`: Nome do container
 - `-p 8081:80`: Mapeia porta 8081 (host) → 80 (container) (diferente da porta 8080 usada anteriormente, para evitar conflitos de portas!)
 - `-v`: **Bind mount** - conecta diretório do host ao container
-  - `$(pwd)` ou `${PWD}`: Diretório atual (onde está o repositório)
+  - `$(pwd)` ou `${PWD}`: Diretório atual (onde está o repositório). As **aspas** são necessárias quando o caminho contém espaços (ex.: `C:\Users\João Silva\...` ou pastas do OneDrive)
   - `/usr/share/nginx/html`: Diretório padrão do NGINX no container
   - `:ro`: **Read-only** - container só pode ler, não modificar
 - `nginx:1.27`: Imagem oficial do NGINX (versão fixada) baseada em Debian
 
 ### 4. Acessar a aplicação
 
-- **GitHub Codespaces:** Abra a aba **PORTS** e clique na porta `8081`, ou use o link automático gerado para `localhost:8081`
-- **Docker Desktop:** Acesse [http://localhost:8081](http://localhost:8081)
+#### GitHub Codespaces – URL pública (caminho oficial da entrega)
 
-**✅ Resultado esperado:** Você deve visualizar a página HTML do repositório sendo servida pelo NGINX.
+1. Abra a aba **PORTS** e localize a porta `8081`.
+2. Clique com o botão direito na porta → **Port Visibility → Public**.
+3. Copie o endereço da coluna **Forwarded Address** (formato `https://<nome-do-codespace>-8081.app.github.dev`). Se preferir, gere o endereço no terminal:
+   ```bash
+   echo "https://${CODESPACE_NAME}-8081.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+   ```
+4. Abra essa URL em uma **aba anônima**. A página deve abrir **sem** pedir login no GitHub. Se pedir, a porta ainda está privada (volte ao passo 2).
+
+> A URL continua ativa apenas enquanto o Codespace e o container estiverem em execução.
+
+#### Docker Desktop (local)
+
+Acesse [http://localhost:8081](http://localhost:8081). Esse endereço é **local** e só abre no seu computador. Para ter uma URL pública, faça a atividade no Codespaces.
+
+**✅ Resultado esperado:** A página **"🐳 Parabéns! Seu container está no ar."**, com layout estilizado (se aparecer sem cores/estilo, o `site.css` não está na pasta montada). O quadro **Verificação do ambiente** mostra o endereço acessado e se o acesso é público.
+
+> 📸 **Tire agora o `screenshot-final.png`** (antes da limpeza do item 5), mostrando a **barra de endereços com a URL pública** e o quadro *Verificação do ambiente* com **"Acesso público? Sim"**.
+
+**🧪 Experimente (bind mount em ação):** com o container rodando, edite o `index.html` na pasta `pratica-docker` do host (por exemplo, troque o título) e recarregue o navegador. A alteração aparece na hora, sem recriar o container. Depois desfaça a mudança com `git checkout index.html`.
 
 ### 5. Limpar o ambiente
 
@@ -524,6 +553,7 @@ docker ps -a
 
 ```bash
 # Remover imagens específicas usadas no laboratório
+# (se você executou os exemplos da Seção 3, remova também: nginx ubuntu)
 docker rmi nginx:1.27 hello-world
 
 # Relatar o espaço consumido por imagens e remover as não utilizadas
@@ -538,8 +568,8 @@ Envie no **Microsoft Teams**
 
 2. **Screenshots** (arquivos PNG, com os nomes sugeridos):
    - `screenshot-passo2.png` — Página padrão do NGINX rodando (porta 8080)
-   - `screenshot-passo5.png` — Página modificada via `docker exec`
-   - `screenshot-final.png` — Atividade final em execução (porta 8081)
+   - `screenshot-passo4.png` — Página modificada via `docker exec` (Passo 4)
+   - `screenshot-final.png` — Atividade final em execução pela **URL pública** da porta 8081 (barra de endereços visível)
 
 3. **`respostas.txt`** com as questões abaixo:
 
@@ -561,7 +591,7 @@ Envie no **Microsoft Teams**
 ### 🔹 Boas Práticas
 
 1. **Use nomes descritivos:** `--name api-backend` melhor que `--name test1`
-2. **Sempre especifique versões de imagens:** `nginx:1.25` melhor que `nginx:latest`
+2. **Sempre especifique versões de imagens:** `nginx:1.27` melhor que `nginx:latest`
 3. **Use volumes para dados persistentes:** Nunca confie em dados dentro do container
 4. **Minimize camadas em Dockerfiles:** Combine comandos quando possível
 5. **Use .dockerignore:** Evite copiar arquivos desnecessários
@@ -572,7 +602,9 @@ Envie no **Microsoft Teams**
 
 | Problema | Solução |
 |----------|---------|
-| "Port already allocated" | Outra aplicação usando a porta. Descubra o container conflitante com `docker ps --filter "publish=8080"` e pare-o com `docker stop`, ou use outra porta no host (ex.: `-p 8090:80`) |
+| "Conflict. The container name ... is already in use" | Já existe um container (mesmo parado) com esse nome. Remova-o com `docker rm -f <nome>` ou use outro `--name` |
+| "Port already allocated" | Outra aplicação usando a porta. Descubra o container conflitante com `docker ps --filter "publish=8080"` e pare-o com `docker stop`, ou use outra porta no host (ex.: `-p 8090:80`). Atenção: o `docker run` que falhou deixa um container no estado `Created` com o nome escolhido — remova-o (`docker rm <nome>`) antes de tentar de novo |
+| "the input device is not a TTY" (Git Bash no Windows) | Use PowerShell/CMD, ou prefixe com `winpty`: `winpty docker exec -it webserver bash` |
 | "Cannot connect to Docker daemon" | No Docker Desktop, verifique se o serviço está rodando. No GitHub Codespaces, reconstrua o dev container se o Docker não tiver iniciado corretamente |
 | Porta `8080` não abre no Codespaces | Abra a aba **PORTS**, confirme se a porta foi encaminhada e clique no link gerado para visualização |
 | Container para imediatamente | Processo principal terminou. Use `docker logs` para investigar |
@@ -595,7 +627,6 @@ Envie no **Microsoft Teams**
 - [Port Forwarding in Codespaces](https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace) - Como acessar aplicações web em execução no ambiente online
 - [Docker Labs](https://github.com/docker/labs) - Repositório oficial de laboratórios
 - [Docker Curriculum](https://docker-curriculum.com/) - Guia para iniciantes
-- [Killercoda Playgrounds](https://killercoda.com/playgrounds) - Alternativa online para playgrounds efêmeros
 
 ### 🧰 Ambiente do Repositório
 - Este repositório inclui `.devcontainer/devcontainer.json` para provisionar automaticamente o ambiente no GitHub Codespaces
@@ -633,9 +664,9 @@ Antes de finalizar, verifique se você:
 - [ ] Compreendeu as formas de identificar containers (ID, short ID, nome) e listar os finalizados com filtros
 - [ ] Conseguiu acessar o NGINX no navegador nas portas `8080` e `8081`
 - [ ] Modificou o conteúdo da página usando `docker exec`
-- [ ] Criou o servidor web personalizado (atividade final com diretório montado)
-- [ ] Removeu containers e imagens não utilizadas ao final do laboratório
-- [ ] Capturou as screenshots necessárias (com os nomes `screenshot-passo2.png`, `screenshot-passo5.png`, `screenshot-final.png`)
+- [ ] Criou o servidor web personalizado (atividade final com diretório montado) e o acessou pela URL pública
+- [ ] Removeu os containers ao final do laboratório (e, opcionalmente, as imagens)
+- [ ] Capturou as screenshots necessárias (com os nomes `screenshot-passo2.png`, `screenshot-passo4.png`, `screenshot-final.png`)
 - [ ] Respondeu às questões em `respostas.txt`
 
 ---
