@@ -70,9 +70,10 @@ Você pode realizar este laboratório de duas formas: a opção online oficial (
 
 > **Caminho oficial sem instalação local.** Este repositório inclui uma configuração de dev container com **Docker-in-Docker**, permitindo executar o roteiro diretamente no navegador.
 
-1. Tenha uma conta no **GitHub**.
-2. Publique este material em um repositório GitHub ou utilize o repositório institucional já disponibilizado.
-3. No GitHub, abra o repositório e acesse **Code → Codespaces → Create codespace on main**.
+1. Tenha uma conta no **GitHub** e faça login.
+2. **Faça um fork deste repositório para a sua conta:** na página do repositório institucional ([`fatec-cd/03-pratica-containers`](https://github.com/fatec-cd/03-pratica-containers)), clique em **Fork → Create fork**, mantendo a sua conta pessoal como *Owner*.
+   > **Por que o fork?** O Codespace criado a partir do **seu** fork pertence à sua conta: usa a sua franquia de uso e segue as suas configurações, e não as políticas da organização `fatec-cd`, que podem bloquear a criação do ambiente ou impedir que a porta `8081` seja tornada pública (exigência da Evidência 3).
+3. Confira que você está no **seu fork** (o endereço deve ser `github.com/<seu-usuario>/03-pratica-containers`) e acesse **Code → Codespaces → Create codespace on main**.
 4. Aguarde a criação do ambiente.
 5. No terminal do Codespaces, valide o ambiente:
    ```bash
@@ -86,7 +87,8 @@ Você pode realizar este laboratório de duas formas: a opção online oficial (
 - Se ao abrir a URL encaminhada aparecer tela de login do GitHub, a porta está **privada**. Na aba **PORTS**, clique com o botão direito na porta → **Port Visibility → Public** para liberar o acesso (necessário, por exemplo, para tirar screenshots em aba anônima).
 - Se o Docker não estiver disponível logo após abrir o ambiente, execute **Codespaces: Rebuild Container**.
 - O Codespace é suspenso após cerca de 30 minutos sem uso. Ao retomá-lo, os containers estarão parados (`Exited`): confira com `docker ps -a` e reinicie o que estiver usando com `docker start <nome>` antes de continuar.
-- Contas pessoais possuem franquia mensal; após o limite, o uso pode exigir forma de pagamento ou orçamento da organização.
+- Contas pessoais possuem franquia mensal gratuita; após o limite, o uso passa a exigir forma de pagamento. Exclua o Codespace ao terminar a atividade (**Code → Codespaces → … → Delete**) para não consumir a franquia.
+- Se o roteiro original for atualizado depois do seu fork, use **Sync fork → Update branch** na página do seu fork e depois **Codespaces: Rebuild Container**.
 
 ### 💻 Opção 2 – Docker local (Docker Desktop ou Docker Engine)
 1. **Windows/Mac:** Baixe o **Docker Desktop**:  
@@ -595,13 +597,13 @@ Identifique cada captura no documento com o número do passo ou da atividade. Ex
 
 | Problema | Solução |
 |----------|---------|
-| `This codespace is currently running in recovery mode due to a container error` | Normalmente o feature `docker-in-docker` falhou na criação. Uma causa comum é a imagem base `mcr.microsoft.com/devcontainers/base:ubuntu` apontar para uma versão do Ubuntu sem pacotes `moby-*` (ex.: 26.04 "resolute"), gerando `The 'moby' option is not supported on ubuntu 'resolute'`. O repositório já fixa a tag `ubuntu-24.04` no `devcontainer.json`. Depois de atualizar o repositório, execute **Codespaces: Rebuild Container** na paleta de comandos. Se o erro continuar, exclua o Codespace e crie outro a partir da branch atual. |
+| `This codespace is currently running in recovery mode due to a container error` | Normalmente o feature `docker-in-docker` falhou na criação. Uma causa comum é a imagem base `mcr.microsoft.com/devcontainers/base:ubuntu` apontar para uma versão do Ubuntu sem pacotes `moby-*` (ex.: 26.04 "resolute"), gerando `The 'moby' option is not supported on ubuntu 'resolute'`. O repositório já fixa a tag `ubuntu-24.04` no `devcontainer.json`. Sincronize o seu fork com o original (**Sync fork → Update branch**) e execute **Codespaces: Rebuild Container** na paleta de comandos. Se o erro continuar, exclua o Codespace e crie outro a partir do fork atualizado. |
 | "Conflict. The container name ... is already in use" | Já existe um container (mesmo parado) com esse nome. Remova-o com `docker rm -f <nome>` ou use outro `--name` |
 | "Port already allocated" | Outra aplicação usando a porta. Descubra o container conflitante com `docker ps --filter "publish=8080"` e pare-o com `docker stop`, ou use outra porta no host (ex.: `-p 8090:80`). Atenção: o `docker run` que falhou deixa um container no estado `Created` com o nome escolhido — remova-o (`docker rm <nome>`) antes de tentar de novo |
 | "the input device is not a TTY" (Git Bash no Windows) | Use PowerShell/CMD, ou prefixe com `winpty`: `winpty docker exec -it webserver bash` |
 | "Cannot connect to Docker daemon" | No Docker Desktop, verifique se o serviço está rodando. No GitHub Codespaces, reconstrua o dev container se o Docker não tiver iniciado corretamente |
 | Porta `8080` não abre no Codespaces | Abra a aba **PORTS**, confirme se a porta foi encaminhada e clique no ícone de globo (**Open in Browser**) da porta |
-| Opção **Public** indisponível na aba **PORTS** | A organização dona do repositório pode bloquear portas públicas no Codespaces. Avise o professor ou crie o Codespace a partir de um *fork* do repositório na sua conta pessoal |
+| Opção **Public** indisponível na aba **PORTS** | O Codespace provavelmente foi criado no repositório da organização, que pode bloquear portas públicas. Exclua-o e crie outro a partir do **seu fork** (Seção 2, Opção 1). Se o problema continuar, avise o professor |
 | Containers parados depois de retomar o Codespace | O Codespace é suspenso após cerca de 30 minutos sem uso e os containers ficam `Exited`. Reinicie-os com `docker start <nome>` |
 | Porta `8081` mostra a página padrão do NGINX ou erro 403 | O bind mount aponta para a pasta errada: confira com `ls` se você está na pasta que contém `index.html`. No Git Bash (Windows), use o comando específico da Atividade Final (item 5.2) |
 | Container para imediatamente | Processo principal terminou. Use `docker logs` para investigar |
@@ -657,6 +659,7 @@ Identifique cada captura no documento com o número do passo ou da atividade. Ex
 
 Antes de finalizar, verifique se você:
 
+- [ ] (Codespaces) Criou o Codespace a partir do seu fork do repositório
 - [ ] Executou os passos do laboratório na ordem indicada
 - [ ] Entendeu a diferença entre modo interativo e detached
 - [ ] Compreendeu as formas de identificar containers (ID, short ID, nome) e listar os finalizados com filtros
