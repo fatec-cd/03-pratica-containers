@@ -85,6 +85,7 @@ Você pode realizar este laboratório de duas formas: a opção online oficial (
 - As portas `8080` e `8081` já ficam configuradas para encaminhamento automático neste repositório.
 - Se ao abrir a URL encaminhada aparecer tela de login do GitHub, a porta está **privada**. Na aba **PORTS**, clique com o botão direito na porta → **Port Visibility → Public** para liberar o acesso (necessário, por exemplo, para tirar screenshots em aba anônima).
 - Se o Docker não estiver disponível logo após abrir o ambiente, execute **Codespaces: Rebuild Container**.
+- O Codespace é suspenso após cerca de 30 minutos sem uso. Ao retomá-lo, os containers estarão parados (`Exited`): confira com `docker ps -a` e reinicie o que estiver usando com `docker start <nome>` antes de continuar.
 - Contas pessoais possuem franquia mensal; após o limite, o uso pode exigir forma de pagamento ou orçamento da organização.
 
 ### 💻 Opção 2 – Docker local (Docker Desktop ou Docker Engine)
@@ -116,19 +117,21 @@ Você pode realizar este laboratório de duas formas: a opção online oficial (
 > docker rm -f meu-nginx webserver ubuntu-server
 > docker container prune -f
 > ```
+>
+> O `docker container prune -f` remove **todos** os containers parados, sem pedir confirmação. No Docker local, isso inclui containers parados de outros projetos seus.
 
 ### 🔑 Identificação de Containers
 
 Todo container Docker pode ser identificado de **três formas diferentes**:
 
-#### 1. Container ID (Hash Completo)
-- Hash SHA256 de 64 caracteres
+#### 1. Container ID (ID Completo)
+- Identificador hexadecimal de 64 caracteres (256 bits)
 - Exemplo: `a3f5b8c7e9d1f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d6e8f0a2`
-- Gerado aleatoriamente pelo Docker a cada novo container
+- Gerado aleatoriamente pelo Docker a cada novo container (não é o hash de um conteúdo, ao contrário do *digest* de uma imagem)
 - Raramente usado na prática (muito longo)
 
-#### 2. Short ID (Hash Curto)
-- Primeiros 12 caracteres do hash completo
+#### 2. Short ID (ID Curto)
+- Primeiros 12 caracteres do ID completo
 - Exemplo: `a3f5b8c7e9d1`
 - **Mais comum** para identificação rápida
 - Obtido com: `docker ps`
@@ -226,8 +229,8 @@ a3f5b8c7e9d1f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d6e8f0a2
 
 # Container continua rodando em background
 docker ps
-# CONTAINER ID   STATUS    PORTS                  NAMES
-# a3f5b8c7e9d1   Up 5s     0.0.0.0:8080->80/tcp   webserver
+# CONTAINER ID   STATUS    PORTS                                     NAMES
+# a3f5b8c7e9d1   Up 5s     0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   webserver
 ```
 
 **Características:**
@@ -265,7 +268,7 @@ docker exec -it ubuntu-server bash
 | Ao fechar terminal       | Container para              | Container continua          |
 | Uso típico               | Debug, testes, shells       | Serviços, produção          |
 | Exemplo                  | `docker run -it ubuntu`     | `docker run -d nginx`       |
-| Input do usuário         | ✅ Possível                  | ❌ Não disponível            |
+| Input do usuário         | ✅ Possível                  | ⚠️ Só via `docker exec -it`  |
 | Múltiplos containers     | Difícil (1 terminal/cont.)  | Fácil (todos em background) |
 
 ---
@@ -316,7 +319,7 @@ docker run -d --name webserver -p 8080:80 nginx:1.27
 - `nginx:1.27`: Nome da imagem e **tag de versão** fixada (boa prática: evite `latest` em produção)
 
 **Acessar o servidor:**
-- **GitHub Codespaces:** Abra a aba **PORTS** e clique na porta `8080`, ou use o link automático exibido no terminal para `localhost:8080`
+- **GitHub Codespaces:** O Codespaces detecta a porta `8080` e abre automaticamente uma pré-visualização no editor. Se ela não abrir (ou para ver em uma aba do navegador), vá até a aba **PORTS** e clique no ícone de globo (**Open in Browser**) da porta `8080`
 - **Docker Desktop:** Acesse [http://localhost:8080](http://localhost:8080)
 
 **Você deve ver:** A página padrão "Welcome to nginx!"
@@ -419,7 +422,7 @@ docker kill webserver
 ```
 
 **Diferença entre stop e kill:**
-- `stop`: Envia SIGTERM, aguarda 10s, depois SIGKILL (graceful)
+- `stop`: Envia o sinal de parada da imagem, aguarda 10s e, se o processo ainda estiver vivo, envia SIGKILL (graceful). O sinal padrão é SIGTERM; a imagem `nginx` define `STOPSIGNAL SIGQUIT`, que faz o NGINX encerrar as conexões de forma ordenada
 - `kill`: Envia SIGKILL imediatamente (forçado)
 
 > Após `docker kill`, o container fica em estado `Exited`. Antes de seguir para o Passo 6, reinicie-o para garantir um estado consistente:
@@ -432,13 +435,14 @@ docker kill webserver
 
 ### 🔹 Passo 6 – Remover containers (limpeza parcial)
 
-> A limpeza de **imagens** foi movida para o final do roteiro (após a Atividade Final), porque a imagem `nginx` ainda será reutilizada.
+> A limpeza de **imagens** fica para o final do roteiro (item 5.6 da Atividade Final), porque a imagem `nginx` ainda será reutilizada.
 
 ```bash
 # Remover o container (já para automaticamente se estiver rodando)
 docker rm -f webserver
 
-# Remover TODOS os containers parados (ex.: o do hello-world)
+# Remover TODOS os containers parados (ex.: o do hello-world).
+# No Docker local, isso inclui containers parados de outros projetos seus.
 # O comando pede confirmação: responda "y". Se responder "N", o
 # `docker rmi hello-world` da limpeza final falhará (imagem em uso).
 docker container prune
@@ -451,11 +455,15 @@ docker images
 
 ## 🌐 5. Atividade Final – Servidor Web Personalizado
 
-### 1. Clonar o repositório de exemplo
+### 5.1 Clonar o repositório de exemplo
 
 O repositório [`fatec-cd/pratica-docker`](https://github.com/fatec-cd/pratica-docker) contém um site estático (`index.html` + `site.css`) preparado para esta atividade. O objetivo é servi-lo com o NGINX **a partir de um container** e acessá-lo pelo navegador (pela URL pública no Codespaces ou por `localhost:8081` no Docker local).
 
 ```bash
+# Ir para a pasta pessoal: no Codespaces, o terminal abre dentro da pasta
+# do roteiro, e clonar ali criaria um repositório dentro do outro
+cd ~
+
 # Clonar repositório com conteúdo web
 git clone https://github.com/fatec-cd/pratica-docker.git
 cd pratica-docker
@@ -466,7 +474,7 @@ cd pratica-docker
 - Ou baixe o ZIP do repositório diretamente no GitHub (**Code → Download ZIP**), extraia e entre na pasta extraída (ela se chamará `pratica-docker-main`)
 - Confira que você está na pasta certa: `ls` (ou `dir`) deve listar `index.html`, `site.css` e `README.md`
 
-### 2. Executar NGINX com bind mount
+### 5.2 Executar NGINX com bind mount
 
 **Linux/macOS/GitHub Codespaces:**
 ```bash
@@ -486,7 +494,12 @@ docker run -d --name meuweb -p 8081:80 -v "${PWD}:/usr/share/nginx/html:ro" ngin
 docker run -d --name meuweb -p 8081:80 -v "%cd%":/usr/share/nginx/html:ro nginx:1.27
 ```
 
-### 3. Entendendo o comando
+**Windows (Git Bash):** não use o comando da opção Linux. O Git Bash converte automaticamente caminhos como `/usr/share/nginx/html` em caminhos do Windows, e o container sobe servindo uma pasta errada (página padrão do NGINX ou erro 403). Desative a conversão e use o caminho no formato do Windows:
+```bash
+MSYS_NO_PATHCONV=1 docker run -d --name meuweb -p 8081:80 -v "$(pwd -W)":/usr/share/nginx/html:ro nginx:1.27
+```
+
+### 5.3 Entendendo o comando
 
 **Detalhamento das flags:**
 - `-d`: Modo detached (background)
@@ -498,12 +511,12 @@ docker run -d --name meuweb -p 8081:80 -v "%cd%":/usr/share/nginx/html:ro nginx:
   - `:ro`: **Read-only** - container só pode ler, não modificar
 - `nginx:1.27`: Imagem oficial do NGINX (versão fixada) baseada em Debian
 
-### 4. Acessar a aplicação
+### 5.4 Acessar a aplicação
 
 #### GitHub Codespaces – URL pública
 
 1. Abra a aba **PORTS** e localize a porta `8081`.
-2. Clique com o botão direito na porta → **Port Visibility → Public**.
+2. Clique com o botão direito na porta → **Port Visibility → Public**. Se a opção **Public** não estiver disponível, veja a tabela de *Troubleshooting* (Seção 7).
 3. Copie o endereço da coluna **Forwarded Address** (formato `https://<nome-do-codespace>-8081.app.github.dev`). Se preferir, gere o endereço no terminal:
    ```bash
    echo "https://${CODESPACE_NAME}-8081.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
@@ -518,11 +531,11 @@ Acesse [http://localhost:8081](http://localhost:8081). Esse endereço é **local
 
 **✅ Resultado esperado:** A página **"🐳 Parabéns! Seu container está no ar."**, com layout estilizado (se aparecer sem cores/estilo, o `site.css` não está na pasta montada). O quadro **Verificação do ambiente** mostra o endereço acessado e se o acesso é público.
 
-> 📸 **Evidência 3:** antes da limpeza do item 5, capture a página final com o layout e a barra de endereços visíveis. No **Codespaces**, use a URL pública da porta `8081` em uma aba anônima e inclua o quadro *Verificação do ambiente* com **"Acesso público? Sim"**. No **Docker local**, mostre `http://localhost:8081` na barra de endereços; acesso público não é exigido nessa opção.
+> 📸 **Evidência 3:** antes da limpeza do item 5.5, capture a página final com o layout e a barra de endereços visíveis. No **Codespaces**, use a URL pública da porta `8081` em uma aba anônima e inclua o quadro *Verificação do ambiente* com **"Acesso público? Sim"**. O quadro mostra "Sim" para qualquer endereço que não seja `localhost`; é a aba anônima que comprova que a porta está pública, pois ela só abre a página sem pedir login se a porta for realmente pública. No **Docker local**, mostre `http://localhost:8081` na barra de endereços; acesso público não é exigido nessa opção.
 
 **🧪 Experimente (bind mount em ação):** com o container rodando, edite o `index.html` na pasta `pratica-docker` do host (por exemplo, troque o título) e recarregue o navegador. A alteração aparece na hora, sem recriar o container. Depois restaure o texto original (se você clonou o repositório, pode usar `git restore index.html`).
 
-### 5. Limpar o ambiente
+### 5.5 Limpar o ambiente
 
 ```bash
 # Parar e remover o container
@@ -537,14 +550,19 @@ ls pratica-docker/
 docker ps -a
 ```
 
-### 6. Limpeza final de imagens (opcional)
+### 5.6 Limpeza final de imagens (opcional)
 
 ```bash
 # Remover imagens específicas usadas no laboratório
 # (se você executou os exemplos da Seção 3, remova também: nginx ubuntu)
 docker rmi nginx:1.27 hello-world
 
-# Relatar o espaço consumido por imagens e remover as não utilizadas
+# Ver o espaço ocupado por imagens, containers e volumes
+docker system df
+
+# Remover imagens órfãs ("dangling"), sem nome nem tag.
+# Para remover TODAS as imagens sem container associado, use `docker image prune -a`
+# (no Docker local, isso também apaga imagens de outros projetos seus).
 docker image prune
 ```
 
@@ -571,18 +589,21 @@ Identifique cada captura no documento com o número do passo ou da atividade. Ex
 4. **Minimize camadas em Dockerfiles:** Combine comandos quando possível
 5. **Use .dockerignore:** Evite copiar arquivos desnecessários
 6. **Rode containers como non-root:** Aumente a segurança
-7. **Limpeza regular:** Use `docker system prune` periodicamente
+7. **Limpeza regular:** Use `docker system prune` periodicamente (ele remove containers parados, redes sem uso e imagens órfãs de **todos** os projetos do host)
 
 ### 🔹 Troubleshooting Comum
 
 | Problema | Solução |
 |----------|---------|
-| `This codespace is currently running in recovery mode due to a container error` | Normalmente o feature `docker-in-docker` falhou na criação. Uma causa comum é a imagem base `mcr.microsoft.com/devcontainers/base:ubuntu` apontar para uma versão do Ubuntu sem pacotes `moby-*` (ex.: 25.10 "resolute"), gerando `The 'moby' option is not supported on ubuntu 'resolute'`. O repositório já fixa a tag `ubuntu-24.04` no `devcontainer.json`. Depois de atualizar o repositório, execute **Codespaces: Rebuild Container** na paleta de comandos. Se o erro continuar, exclua o Codespace e crie outro a partir da branch atual. |
+| `This codespace is currently running in recovery mode due to a container error` | Normalmente o feature `docker-in-docker` falhou na criação. Uma causa comum é a imagem base `mcr.microsoft.com/devcontainers/base:ubuntu` apontar para uma versão do Ubuntu sem pacotes `moby-*` (ex.: 26.04 "resolute"), gerando `The 'moby' option is not supported on ubuntu 'resolute'`. O repositório já fixa a tag `ubuntu-24.04` no `devcontainer.json`. Depois de atualizar o repositório, execute **Codespaces: Rebuild Container** na paleta de comandos. Se o erro continuar, exclua o Codespace e crie outro a partir da branch atual. |
 | "Conflict. The container name ... is already in use" | Já existe um container (mesmo parado) com esse nome. Remova-o com `docker rm -f <nome>` ou use outro `--name` |
 | "Port already allocated" | Outra aplicação usando a porta. Descubra o container conflitante com `docker ps --filter "publish=8080"` e pare-o com `docker stop`, ou use outra porta no host (ex.: `-p 8090:80`). Atenção: o `docker run` que falhou deixa um container no estado `Created` com o nome escolhido — remova-o (`docker rm <nome>`) antes de tentar de novo |
 | "the input device is not a TTY" (Git Bash no Windows) | Use PowerShell/CMD, ou prefixe com `winpty`: `winpty docker exec -it webserver bash` |
 | "Cannot connect to Docker daemon" | No Docker Desktop, verifique se o serviço está rodando. No GitHub Codespaces, reconstrua o dev container se o Docker não tiver iniciado corretamente |
-| Porta `8080` não abre no Codespaces | Abra a aba **PORTS**, confirme se a porta foi encaminhada e clique no link gerado para visualização |
+| Porta `8080` não abre no Codespaces | Abra a aba **PORTS**, confirme se a porta foi encaminhada e clique no ícone de globo (**Open in Browser**) da porta |
+| Opção **Public** indisponível na aba **PORTS** | A organização dona do repositório pode bloquear portas públicas no Codespaces. Avise o professor ou crie o Codespace a partir de um *fork* do repositório na sua conta pessoal |
+| Containers parados depois de retomar o Codespace | O Codespace é suspenso após cerca de 30 minutos sem uso e os containers ficam `Exited`. Reinicie-os com `docker start <nome>` |
+| Porta `8081` mostra a página padrão do NGINX ou erro 403 | O bind mount aponta para a pasta errada: confira com `ls` se você está na pasta que contém `index.html`. No Git Bash (Windows), use o comando específico da Atividade Final (item 5.2) |
 | Container para imediatamente | Processo principal terminou. Use `docker logs` para investigar |
 | "No such file or directory" em volumes | Caminho incorreto. Use caminho absoluto ou `$(pwd)` |
 | Imagem não encontrada | Verifique o nome. Use `docker pull` primeiro |
@@ -593,15 +614,15 @@ Identifique cada captura no documento com o número do passo ou da atividade. Ex
 
 ### 📚 Documentação Oficial
 - [Docker Documentation](https://docs.docker.com/) - Documentação completa e atualizada
-- [Docker CLI Reference](https://docs.docker.com/engine/reference/commandline/cli/) - Todos os comandos
-- [Dockerfile Reference](https://docs.docker.com/engine/reference/builder/) - Sintaxe do Dockerfile
+- [Docker CLI Reference](https://docs.docker.com/reference/cli/docker/) - Todos os comandos
+- [Dockerfile Reference](https://docs.docker.com/reference/dockerfile/) - Sintaxe do Dockerfile
 - [Docker Hub](https://hub.docker.com/) - Repositório oficial de imagens
 - [GitHub Codespaces](https://docs.github.com/en/codespaces) - Ambiente online oficial recomendado para este roteiro
 
 ### 🎓 Tutoriais e Cursos
-- [GitHub Codespaces Overview](https://docs.github.com/en/codespaces/overview) - Visão geral do serviço
+- [GitHub Codespaces Overview](https://docs.github.com/en/codespaces/about-codespaces/what-are-codespaces) - Visão geral do serviço
 - [Port Forwarding in Codespaces](https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace) - Como acessar aplicações web em execução no ambiente online
-- [Docker Labs](https://github.com/docker/labs) - Repositório oficial de laboratórios
+- [Docker Labs](https://github.com/docker-archive-public/docker.labs) - Laboratórios oficiais da Docker (repositório arquivado em 2025, somente leitura)
 - [Docker Curriculum](https://docker-curriculum.com/) - Guia para iniciantes
 
 ### 🧰 Ambiente do Repositório
@@ -612,7 +633,7 @@ Identifique cada captura no documento com o número do passo ou da atividade. Ex
 ### 📖 Livros e Guias
 - "Docker Deep Dive" - Nigel Poulton
 - "Docker in Action" - Jeff Nickoloff
-- [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/) - Guia oficial
+- [Docker Best Practices](https://docs.docker.com/build/building/best-practices/) - Guia oficial
 
 ### 🛠️ Ferramentas Úteis
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) - Interface gráfica oficial
@@ -624,7 +645,7 @@ Identifique cada captura no documento com o número do passo ou da atividade. Ex
 - [Docker Community Forums](https://forums.docker.com/)
 - [Stack Overflow - Docker Tag](https://stackoverflow.com/questions/tagged/docker)
 - [Reddit r/docker](https://www.reddit.com/r/docker/)
-- [Docker Community Slack](https://www.docker.com/docker-community)
+- [Docker Community](https://www.docker.com/community/)
 
 ### 📺 Vídeos (em português)
 - [Canal Full Cycle](https://www.youtube.com/@FullCycle) - Desenvolvimento com Docker
@@ -644,7 +665,7 @@ Antes de finalizar, verifique se você:
 - [ ] Criou o servidor web personalizado (atividade final com diretório montado) e o acessou pela URL pública no Codespaces ou por `localhost:8081` no Docker local
 - [ ] Removeu os containers ao final do laboratório (e, opcionalmente, as imagens)
 - [ ] Incluiu as três capturas no mesmo PDF, na ordem indicada
-- [ ] Enviou somente o PDF ao professor pelo Microsoft Teams
+- [ ] Enviou somente o PDF pelo Microsoft Teams
 
 ---
 
