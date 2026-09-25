@@ -272,19 +272,7 @@ docker exec -it ubuntu-server bash
 
 ## 🧩 4. Laboratório Prático
 
-**⚠️ Importante:** Durante a execução, registre cada comando e observação em um arquivo `comandos.txt`.
-
-**Modelo sugerido para `comandos.txt`:**
-
-```text
-# Passo 1 – hello-world
-docker run hello-world
-# Observação: Docker baixou a imagem e exibiu a mensagem de confirmação.
-
-# Passo 2 – NGINX detached
-docker run -d --name webserver -p 8080:80 nginx:1.27
-# Observação: container iniciado em background, porta 8080 mapeada.
-```
+Siga os passos na ordem indicada. Nos pontos marcados com 📸, faça uma captura de tela antes de continuar: as três capturas serão reunidas em **um único PDF** para a entrega (Seção 6).
 
 ---
 
@@ -333,7 +321,7 @@ docker run -d --name webserver -p 8080:80 nginx:1.27
 
 **Você deve ver:** A página padrão "Welcome to nginx!"
 
-> 📸 **Tire agora o `screenshot-passo2.png`** (o container `webserver` será modificado no Passo 4 e removido no Passo 6).
+> 📸 **Evidência 1:** capture a página padrão "Welcome to nginx!" no navegador, com a barra de endereços visível. Faça isso antes de modificar o `webserver` no Passo 4.
 
 ---
 
@@ -395,7 +383,7 @@ exit
 
 **Recarregue o navegador** → Você verá a página modificada!
 
-> 📸 **Tire agora o `screenshot-passo4.png`** com a página modificada.
+> 📸 **Evidência 2:** capture a página modificada no navegador, com a barra de endereços visível. Faça isso antes de remover o `webserver` no Passo 6.
 
 
 ---
@@ -465,7 +453,7 @@ docker images
 
 ### 1. Clonar o repositório de exemplo
 
-O repositório [`fatec-cd/pratica-docker`](https://github.com/fatec-cd/pratica-docker) contém um site estático (`index.html` + `site.css`) preparado para esta atividade. O objetivo é servi-lo com o NGINX **a partir de um container** e acessá-lo por uma **URL pública**.
+O repositório [`fatec-cd/pratica-docker`](https://github.com/fatec-cd/pratica-docker) contém um site estático (`index.html` + `site.css`) preparado para esta atividade. O objetivo é servi-lo com o NGINX **a partir de um container** e acessá-lo pelo navegador (pela URL pública no Codespaces ou por `localhost:8081` no Docker local).
 
 ```bash
 # Clonar repositório com conteúdo web
@@ -512,7 +500,7 @@ docker run -d --name meuweb -p 8081:80 -v "%cd%":/usr/share/nginx/html:ro nginx:
 
 ### 4. Acessar a aplicação
 
-#### GitHub Codespaces – URL pública (caminho oficial da entrega)
+#### GitHub Codespaces – URL pública
 
 1. Abra a aba **PORTS** e localize a porta `8081`.
 2. Clique com o botão direito na porta → **Port Visibility → Public**.
@@ -530,9 +518,9 @@ Acesse [http://localhost:8081](http://localhost:8081). Esse endereço é **local
 
 **✅ Resultado esperado:** A página **"🐳 Parabéns! Seu container está no ar."**, com layout estilizado (se aparecer sem cores/estilo, o `site.css` não está na pasta montada). O quadro **Verificação do ambiente** mostra o endereço acessado e se o acesso é público.
 
-> 📸 **Tire agora o `screenshot-final.png`** (antes da limpeza do item 5), mostrando a **barra de endereços com a URL pública** e o quadro *Verificação do ambiente* com **"Acesso público? Sim"**.
+> 📸 **Evidência 3:** antes da limpeza do item 5, capture a página final com o layout e a barra de endereços visíveis. No **Codespaces**, use a URL pública da porta `8081` em uma aba anônima e inclua o quadro *Verificação do ambiente* com **"Acesso público? Sim"**. No **Docker local**, mostre `http://localhost:8081` na barra de endereços; acesso público não é exigido nessa opção.
 
-**🧪 Experimente (bind mount em ação):** com o container rodando, edite o `index.html` na pasta `pratica-docker` do host (por exemplo, troque o título) e recarregue o navegador. A alteração aparece na hora, sem recriar o container. Depois desfaça a mudança com `git checkout index.html`.
+**🧪 Experimente (bind mount em ação):** com o container rodando, edite o `index.html` na pasta `pratica-docker` do host (por exemplo, troque o título) e recarregue o navegador. A alteração aparece na hora, sem recriar o container. Depois restaure o texto original (se você clonou o repositório, pode usar `git restore index.html`).
 
 ### 5. Limpar o ambiente
 
@@ -562,26 +550,13 @@ docker image prune
 
 ## 📤 6. Entrega da Atividade
 
-Envie no **Microsoft Teams** 
+Crie **um único documento em PDF** com as três capturas marcadas no roteiro, na ordem:
 
-1. **`comandos.txt`**: O arquivo com o histórico dos comandos executados durante o laboratório (conforme solicitado no início da **Seção 4**).
+1. **Evidência 1 (Passo 2):** página padrão do NGINX na porta `8080`.
+2. **Evidência 2 (Passo 4):** página alterada via `docker exec` na porta `8080`.
+3. **Evidência 3 (Atividade Final):** site personalizado na porta `8081`, pela URL pública no Codespaces ou por `http://localhost:8081` no Docker local.
 
-2. **Screenshots** (arquivos PNG, com os nomes sugeridos):
-   - `screenshot-passo2.png` — Página padrão do NGINX rodando (porta 8080)
-   - `screenshot-passo4.png` — Página modificada via `docker exec` (Passo 4)
-   - `screenshot-final.png` — Atividade final em execução pela **URL pública** da porta 8081 (barra de endereços visível)
-
-3. **`respostas.txt`** com as questões abaixo:
-
-#### Questões obrigatórias:
-
-**Q1.** Qual a diferença entre `docker ps` e `docker ps -a`? Qual comando mostra apenas containers finalizados?
-
-**Q2.** Explique a diferença entre executar um container em modo interativo (`-it`) e em modo detached (`-d`). Cite dois exemplos de uso para cada modo.
-
-**Q3.** Explique o que faz a flag `-p 8080:80` no `docker run`. O que aconteceria se você tentasse iniciar um segundo container usando também `-p 8080:80` na mesma máquina? Como poderia contornar?
-
-**Q4.** Como um container pode ser identificado? Explique as três formas e quando usar cada uma.
+Identifique cada captura no documento com o número do passo ou da atividade. Exporte o documento como PDF e envie **somente esse PDF ao professor pelo Microsoft Teams**. Não é necessário enviar capturas separadas, histórico de comandos ou respostas a questões.
 
 
 ---
@@ -661,15 +636,15 @@ Envie no **Microsoft Teams**
 
 Antes de finalizar, verifique se você:
 
-- [ ] Executou todos os comandos do laboratório e anotou no `comandos.txt`
+- [ ] Executou os passos do laboratório na ordem indicada
 - [ ] Entendeu a diferença entre modo interativo e detached
 - [ ] Compreendeu as formas de identificar containers (ID, short ID, nome) e listar os finalizados com filtros
 - [ ] Conseguiu acessar o NGINX no navegador nas portas `8080` e `8081`
 - [ ] Modificou o conteúdo da página usando `docker exec`
-- [ ] Criou o servidor web personalizado (atividade final com diretório montado) e o acessou pela URL pública
+- [ ] Criou o servidor web personalizado (atividade final com diretório montado) e o acessou pela URL pública no Codespaces ou por `localhost:8081` no Docker local
 - [ ] Removeu os containers ao final do laboratório (e, opcionalmente, as imagens)
-- [ ] Capturou as screenshots necessárias (com os nomes `screenshot-passo2.png`, `screenshot-passo4.png`, `screenshot-final.png`)
-- [ ] Respondeu às questões em `respostas.txt`
+- [ ] Incluiu as três capturas no mesmo PDF, na ordem indicada
+- [ ] Enviou somente o PDF ao professor pelo Microsoft Teams
 
 ---
 
