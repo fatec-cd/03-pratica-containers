@@ -556,7 +556,7 @@ Crie **um único documento em PDF** com as três capturas marcadas no roteiro, n
 2. **Evidência 2 (Passo 4):** página alterada via `docker exec` na porta `8080`.
 3. **Evidência 3 (Atividade Final):** site personalizado na porta `8081`, pela URL pública no Codespaces ou por `http://localhost:8081` no Docker local.
 
-Identifique cada captura no documento com o número do passo ou da atividade. Exporte o documento como PDF e envie **somente esse PDF ao professor pelo Microsoft Teams**. Não é necessário enviar capturas separadas, histórico de comandos ou respostas a questões.
+Identifique cada captura no documento com o número do passo ou da atividade. Exporte o documento como PDF e envie **somente esse PDF pelo Microsoft Teams**. 
 
 
 ---
