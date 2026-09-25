@@ -602,6 +602,7 @@ Envie no **Microsoft Teams**
 
 | Problema | Solução |
 |----------|---------|
+| `This codespace is currently running in recovery mode due to a container error` | A configuração do Docker-in-Docker pode não ter sido aplicada ao Codespace atual. Depois de atualizar o repositório, execute **Codespaces: Rebuild Container** na paleta de comandos. Se o erro continuar, exclua o Codespace e crie outro a partir da branch atual. |
 | "Conflict. The container name ... is already in use" | Já existe um container (mesmo parado) com esse nome. Remova-o com `docker rm -f <nome>` ou use outro `--name` |
 | "Port already allocated" | Outra aplicação usando a porta. Descubra o container conflitante com `docker ps --filter "publish=8080"` e pare-o com `docker stop`, ou use outra porta no host (ex.: `-p 8090:80`). Atenção: o `docker run` que falhou deixa um container no estado `Created` com o nome escolhido — remova-o (`docker rm <nome>`) antes de tentar de novo |
 | "the input device is not a TTY" (Git Bash no Windows) | Use PowerShell/CMD, ou prefixe com `winpty`: `winpty docker exec -it webserver bash` |
