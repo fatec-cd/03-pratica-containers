@@ -602,7 +602,7 @@ Envie no **Microsoft Teams**
 
 | Problema | Solução |
 |----------|---------|
-| `This codespace is currently running in recovery mode due to a container error` | A configuração do Docker-in-Docker pode não ter sido aplicada ao Codespace atual. Depois de atualizar o repositório, execute **Codespaces: Rebuild Container** na paleta de comandos. Se o erro continuar, exclua o Codespace e crie outro a partir da branch atual. |
+| `This codespace is currently running in recovery mode due to a container error` | Normalmente o feature `docker-in-docker` falhou na criação. Uma causa comum é a imagem base `mcr.microsoft.com/devcontainers/base:ubuntu` apontar para uma versão do Ubuntu sem pacotes `moby-*` (ex.: 25.10 "resolute"), gerando `The 'moby' option is not supported on ubuntu 'resolute'`. O repositório já fixa a tag `ubuntu-24.04` no `devcontainer.json`. Depois de atualizar o repositório, execute **Codespaces: Rebuild Container** na paleta de comandos. Se o erro continuar, exclua o Codespace e crie outro a partir da branch atual. |
 | "Conflict. The container name ... is already in use" | Já existe um container (mesmo parado) com esse nome. Remova-o com `docker rm -f <nome>` ou use outro `--name` |
 | "Port already allocated" | Outra aplicação usando a porta. Descubra o container conflitante com `docker ps --filter "publish=8080"` e pare-o com `docker stop`, ou use outra porta no host (ex.: `-p 8090:80`). Atenção: o `docker run` que falhou deixa um container no estado `Created` com o nome escolhido — remova-o (`docker rm <nome>`) antes de tentar de novo |
 | "the input device is not a TTY" (Git Bash no Windows) | Use PowerShell/CMD, ou prefixe com `winpty`: `winpty docker exec -it webserver bash` |
@@ -632,6 +632,7 @@ Envie no **Microsoft Teams**
 ### 🧰 Ambiente do Repositório
 - Este repositório inclui `.devcontainer/devcontainer.json` para provisionar automaticamente o ambiente no GitHub Codespaces
 - A configuração usa o feature oficial `docker-in-docker` da especificação Dev Containers
+- A imagem base está fixada em `mcr.microsoft.com/devcontainers/base:ubuntu-24.04`, pois o feature `docker-in-docker` com `moby: true` não possui pacotes para versões mais recentes do Ubuntu
 
 ### 📖 Livros e Guias
 - "Docker Deep Dive" - Nigel Poulton

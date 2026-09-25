@@ -1,6 +1,7 @@
 {
   "name": "docker-lab",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  // Tag fixa: o feature docker-in-docker (moby) nao tem pacotes para o Ubuntu 25.10 (resolute), usado pela tag "ubuntu".
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "privileged": true,
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
